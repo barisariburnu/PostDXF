@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import re
 from typing import Optional
 
 import psycopg2
@@ -11,6 +12,7 @@ import ezdxf
 from shapely import wkt as shapely_wkt
 from shapely.geometry import Polygon, MultiPolygon
 
+ezdxf.fonts.fonts.make_font(r'C:\WINDOWS\Fonts\tahoma.ttf', cap_height=1.2, width_factor=0.9)
 
 # Loguru format: [YYYY-MM-DD HH:MM:SS] - message
 logger.remove()
@@ -40,20 +42,72 @@ def _sanitize_filename(name: str) -> str:
     return sanitized.strip() or 'UNKNOWN'
 
 
-def _new_dxf_doc(version: str = 'R2000'):
-    doc = ezdxf.new(version)
+def _turkish_to_ascii(text: str) -> str:
+    """Map Turkish-specific letters to ASCII equivalents (escape Turkish).
+    Examples: Ş→S, İ→I, Ğ→G, ç→c, ı→i, ö→o, ü→u.
+    """
+    if not isinstance(text, str):
+        return text
+    mapping = {
+        'Ş': 'S', 'ş': 's',
+        'İ': 'I', 'ı': 'i',
+        'Ğ': 'G', 'ğ': 'g',
+        'Ç': 'C', 'ç': 'c',
+        'Ö': 'O', 'ö': 'o',
+        'Ü': 'U', 'ü': 'u',
+    }
+    return ''.join(mapping.get(ch, ch) for ch in text)
+
+
+def _normalize_text(s: str) -> str:
+    """Normalize text containing literal unicode escapes.
+    Supports patterns like 'YEN\u0130CE', '\\U+0130', and 'U+0130'.
+    Only converts unicode escapes; leaves other escapes intact.
+    """
+    if not isinstance(s, str):
+        return s
+    text = s
+    # Convert U+XXXX or \U+XXXX to actual characters
+    def repl_uplus(match):
+        code = match.group(1)
+        try:
+            return chr(int(code, 16))
+        except Exception:
+            return match.group(0)
+    text = re.sub(r'(?:\\)?U\+([0-9A-Fa-f]{4,6})', repl_uplus, text)
+
+    # Convert \uXXXX and \UXXXXXXXX escapes
+    def repl_uesc(match):
+        code = match.group(1)
+        try:
+            return chr(int(code, 16))
+        except Exception:
+            return match.group(0)
+    text = re.sub(r'\\u([0-9A-Fa-f]{4})', repl_uesc, text)
+    text = re.sub(r'\\U([0-9A-Fa-f]{8})', repl_uesc, text)
+    # Finally, escape Turkish letters to ASCII fallbacks
+    text = _turkish_to_ascii(text)
+    return text
+
+
+def _new_dxf_doc(version: str = 'AC1015'):
+    doc = ezdxf.new(dxfversion=version)
     # minimal layers
     doc.layers.new('PARCELS')
     doc.layers.new('LABELS')
+    # Turkish codepage for proper rendering of Turkish characters
+    try:
+        doc.header['$DWGCODEPAGE'] = 'ANSI_1254'
+    except Exception:
+        pass
     return doc
 
 
 def export_dxf_per_district(
     conn,
     output_dir: str,
-    min_text_height: float = 2.5,
-    max_text_height: float = 7.5,
-    scale_factor: float = 0.02,
+    text_height: float = 1.2,
+    width_factor: float = 0.9,
 ) -> None:
     t0 = time.perf_counter()
     cursor = conn.cursor(name='parcel_stream', cursor_factory=psycopg2.extras.DictCursor)
@@ -73,7 +127,16 @@ def export_dxf_per_district(
             filename = _sanitize_filename(current_ilce) + '.dxf'
             out_path = os.path.join(output_dir, filename)
             os.makedirs(output_dir, exist_ok=True)
-            doc.saveas(out_path)
+            
+            try:
+                doc.saveas(out_path, encoding='cp1254')
+            except Exception:
+                # Fallback: UTF-8 encoding dene
+                try:
+                    doc.saveas(out_path, encoding='utf-8')
+                except Exception:
+                    # Final fallback to default encoding
+                    doc.saveas(out_path)
             elapsed = time.perf_counter() - (district_start or t0)
             logger.info(f"İlçe tamamlandı: {current_ilce}, süre={elapsed:.2f} sn, parsel={district_count}")
         doc = None
@@ -94,7 +157,7 @@ def export_dxf_per_district(
                 if current_ilce is not None:
                     save_current()
                 current_ilce = ilce
-                doc = _new_dxf_doc('R2000')
+                doc = _new_dxf_doc('AC1015')
                 msp = doc.modelspace()
                 district_start = time.perf_counter()
                 logger.info(f"İlçe başladı: {current_ilce}")
@@ -123,16 +186,15 @@ def export_dxf_per_district(
                 pts = [(float(x), float(y)) for x, y in list(poly.exterior.coords)]
                 msp.add_lwpolyline(pts, close=True, dxfattribs={'layer': 'PARCELS'})
 
-            # Label at centroid: mahalle-parsel-ada
-            label = f"{mahalle}-{parsel}-{ada}"
+            # Label at centroid: mahalle-parsel-ada (normalized and ASCII-safe)
+            label = f"{_normalize_text(mahalle)}-{_normalize_text(parsel)}-{_normalize_text(ada)}"
             c = geom.centroid
             x, y = float(c.x), float(c.y)
+            txt = msp.add_text(label, dxfattribs={'height': text_height, 'layer': 'LABELS'})
             try:
-                area = float(abs(geom.area))
-                height = max(min_text_height, min(max_text_height, (area ** 0.5) * scale_factor))
+                txt.dxf.width = float(width_factor)
             except Exception:
-                height = min_text_height
-            txt = msp.add_text(label, dxfattribs={'height': height, 'layer': 'LABELS'})
+                pass
             # Robust placement across ezdxf versions
             try:
                 txt.set_pos((x, y), align='MIDDLE_CENTER')
@@ -186,6 +248,10 @@ def main() -> None:
             password=db_password,
             dbname=db_name,
         )
+        try:
+            conn.set_client_encoding('UTF8')
+        except Exception:
+            pass
         logger.info('Bağlantı başarılı. Sorgu ile DXF üretilecek.')
         export_dxf_per_district(conn, output_dir)
     except Exception as e:
