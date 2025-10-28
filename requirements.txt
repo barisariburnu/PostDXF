@@ -1,0 +1,10 @@
+# Core dependencies
+psycopg2-binary>=2.9,<3.0
+loguru>=0.6,<1.0
+python-dotenv>=1.0,<2.0
+ezdxf>=1.2,<2.0
+shapely>=2.0,<3.0
+
+# Development dependencies (optional)
+# black>=23.0.0
+# mypy>=1.7.0

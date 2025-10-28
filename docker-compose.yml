@@ -1,0 +1,13 @@
+services:
+  dxf:
+    container_name: dxf
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+      - ./outputs:/app/outputs
+    command:
+      ["supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

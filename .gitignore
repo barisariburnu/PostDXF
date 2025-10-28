@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+
+# Build / packaging / tooling
+.tox/
+.nox/
+.coverage*
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+
+# OS / Editors
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Outputs
+output*/

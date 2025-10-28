@@ -1,0 +1,1 @@
+0 1 * * * root /app/scripts/command.sh >> /var/log/dxf_cron.log 2>&1
