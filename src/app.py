@@ -48,7 +48,13 @@ def _new_dxf_doc(version: str = 'R2000'):
     return doc
 
 
-def export_dxf_per_district(conn, output_dir: str, text_height: float = 2.5) -> None:
+def export_dxf_per_district(
+    conn,
+    output_dir: str,
+    min_text_height: float = 2.5,
+    max_text_height: float = 7.5,
+    scale_factor: float = 0.02,
+) -> None:
     t0 = time.perf_counter()
     cursor = conn.cursor(name='parcel_stream', cursor_factory=psycopg2.extras.DictCursor)
     cursor.itersize = 2000
@@ -120,12 +126,29 @@ def export_dxf_per_district(conn, output_dir: str, text_height: float = 2.5) -> 
             # Label at centroid: mahalle-parsel-ada
             label = f"{mahalle}-{parsel}-{ada}"
             c = geom.centroid
-            txt = msp.add_text(label, dxfattribs={'height': text_height, 'layer': 'LABELS'})
+            x, y = float(c.x), float(c.y)
             try:
-                txt.set_pos((float(c.x), float(c.y)), align='MIDDLE_CENTER')
+                area = float(abs(geom.area))
+                height = max(min_text_height, min(max_text_height, (area ** 0.5) * scale_factor))
             except Exception:
-                # Fallback: place at insert without alignment
-                pass
+                height = min_text_height
+            txt = msp.add_text(label, dxfattribs={'height': height, 'layer': 'LABELS'})
+            # Robust placement across ezdxf versions
+            try:
+                txt.set_pos((x, y), align='MIDDLE_CENTER')
+            except Exception:
+                try:
+                    # Older API
+                    txt.set_placement((x, y))
+                except Exception:
+                    try:
+                        # Manual alignment
+                        txt.dxf.halign = 1  # center
+                        txt.dxf.valign = 2  # middle
+                        txt.dxf.align_point = (x, y)
+                    except Exception:
+                        # Final fallback: simple insert
+                        txt.dxf.insert = (x, y)
 
             district_count += 1
 

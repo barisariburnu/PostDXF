@@ -28,3 +28,7 @@ Thumbs.db
 
 # Outputs
 output*/
+
+# Supervisord
+supervisord.log
+supervisord.pid

@@ -23,3 +23,17 @@
 2025-10-28 06:38:10,488 INFO supervisord started with pid 1
 2025-10-28 06:38:11,494 INFO spawned: 'cron' with pid 7
 2025-10-28 06:38:12,498 INFO success: cron entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-10-28 06:56:37,371 WARN received SIGTERM indicating exit request
+2025-10-28 06:56:37,372 INFO waiting for cron to die
+2025-10-28 06:56:37,374 WARN stopped: cron (terminated by SIGTERM)
+2025-10-28 06:56:48,638 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2025-10-28 06:56:48,656 INFO supervisord started with pid 1
+2025-10-28 06:56:49,665 INFO spawned: 'cron' with pid 7
+2025-10-28 06:56:51,596 INFO success: cron entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-10-28 06:57:48,625 WARN received SIGTERM indicating exit request
+2025-10-28 06:57:48,627 INFO waiting for cron to die
+2025-10-28 06:57:48,628 WARN stopped: cron (terminated by SIGTERM)
+2025-10-28 06:57:57,597 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2025-10-28 06:57:57,605 INFO supervisord started with pid 1
+2025-10-28 06:57:58,610 INFO spawned: 'cron' with pid 7
+2025-10-28 06:57:59,620 INFO success: cron entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
