@@ -1,4 +1,4 @@
-# Postgres2DXF — Parcel DXF Exporter (R2000)
+# PostDXF — Parcel DXF Exporter (R2000)
 
 Minimal exporter that connects to an existing PostgreSQL database, runs one optimized query, and writes per‑district DXF files in R2000 format. Each parcel is drawn as an exterior `LWPOLYLINE` and labeled at its centroid with `"Mahalle-Parsel-Ada"`.
 

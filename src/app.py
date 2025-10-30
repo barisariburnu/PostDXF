@@ -19,19 +19,18 @@ logger.remove()
 logger.add(sys.stdout, format="[{time:YYYY-MM-DD HH:mm:ss}] - {message}", level="INFO")
 
 
-# Only SQL query (no CAST, minimal JOINs)
+# SQL query: geometrileri SRID 2320’ye normalize eder
 QUERY = """
 SELECT 
     i.ad AS "ILCE_ADI",
     m.tapumahallead AS "TAPU_MAHALLE_ADI",
     p.adano AS "ADA",
     p.parselno AS "PARSEL",
-    p.geom AS "GEOMETRY",
-    p.orjinalgeomwkt AS "ORJINAL_WKT"
+    ST_AsText(ST_Transform(p.geom, 2320)) AS "ORJINAL_WKT"
 FROM public.tk_parsel p
 INNER JOIN public.tk_mahalle m ON m.tapukimlikno = p.tapumahalleref
 INNER JOIN public.tk_ilce i ON i.fid = m.ilceref
-WHERE p.durum <> '2'
+WHERE p.durum <> '2' and i.ad = 'GÜRSU'
 ORDER BY i.ad
 """
 
@@ -93,8 +92,9 @@ def _normalize_text(s: str) -> str:
 def _new_dxf_doc(version: str = 'AC1015'):
     doc = ezdxf.new(dxfversion=version)
     # minimal layers
-    doc.layers.new('PARCELS')
-    doc.layers.new('LABELS')
+    # set explicit colors to avoid white-on-white invisibility in some viewers
+    doc.layers.new('PARCELS', dxfattribs={'color': 1, 'linetype': 'Continuous'})  # red
+    doc.layers.new('LABELS', dxfattribs={'color': 2, 'linetype': 'Continuous'})   # yellow
     # Turkish codepage for proper rendering of Turkish characters
     try:
         doc.header['$DWGCODEPAGE'] = 'ANSI_1254'
@@ -187,7 +187,7 @@ def export_dxf_per_district(
                 msp.add_lwpolyline(pts, close=True, dxfattribs={'layer': 'PARCELS'})
 
             # Label at centroid: mahalle-parsel-ada (normalized and ASCII-safe)
-            label = f"{_normalize_text(mahalle)}-{_normalize_text(parsel)}-{_normalize_text(ada)}"
+            label = f"{_normalize_text(mahalle)}-{_normalize_text(ada)}-{_normalize_text(parsel)}"
             c = geom.centroid
             x, y = float(c.x), float(c.y)
             txt = msp.add_text(label, dxfattribs={'height': text_height, 'layer': 'LABELS'})
