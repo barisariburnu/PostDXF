@@ -12,26 +12,22 @@ import ezdxf
 from shapely import wkt as shapely_wkt
 from shapely.geometry import Polygon, MultiPolygon
 
-ezdxf.fonts.fonts.make_font(r'C:\WINDOWS\Fonts\tahoma.ttf', cap_height=1.2, width_factor=0.9)
-
 # Loguru format: [YYYY-MM-DD HH:MM:SS] - message
 logger.remove()
 logger.add(sys.stdout, format="[{time:YYYY-MM-DD HH:mm:ss}] - {message}", level="INFO")
 
-
-# SQL query: geometrileri SRID 2320’ye normalize eder
 QUERY = """
-SELECT 
-    i.ad AS "ILCE_ADI",
-    m.tapumahallead AS "TAPU_MAHALLE_ADI",
-    p.adano AS "ADA",
-    p.parselno AS "PARSEL",
-    ST_AsText(ST_Transform(p.geom, 2320)) AS "ORJINAL_WKT"
-FROM public.tk_parsel p
-INNER JOIN public.tk_mahalle m ON m.tapukimlikno = p.tapumahalleref
-INNER JOIN public.tk_ilce i ON i.fid = m.ilceref
-WHERE p.durum <> '2'
-ORDER BY i.ad
+    SELECT 
+        i.ad AS "ILCE_ADI",
+        m.tapumahallead AS "TAPU_MAHALLE_ADI",
+        p.adano AS "ADA",
+        p.parselno AS "PARSEL",
+        ST_AsText(ST_Transform(p.geom, 2320)) AS "ORJINAL_WKT"
+    FROM public.tk_parsel p
+    INNER JOIN public.tk_mahalle m ON m.tapukimlikno = p.tapumahalleref
+    INNER JOIN public.tk_ilce i ON i.fid = m.ilceref
+    WHERE p.durum <> '2'
+    ORDER BY i.ad
 """
 
 
