@@ -26,7 +26,7 @@ QUERY = """
     FROM public.tk_parsel p
     INNER JOIN public.tk_mahalle m ON m.tapukimlikno = p.tapumahalleref
     INNER JOIN public.tk_ilce i ON i.fid = m.ilceref
-    WHERE p.durum <> '2'
+    WHERE p.durum = '3'
     ORDER BY i.ad
 """
 
