@@ -22,7 +22,7 @@ QUERY = """
         m.tapumahallead AS "TAPU_MAHALLE_ADI",
         p.adano AS "ADA",
         p.parselno AS "PARSEL",
-        ST_AsText(ST_Transform(p.geom, 2320)) AS "ORJINAL_WKT"
+        ST_AsText(p.geom) AS "ORJINAL_WKT"
     FROM public.tk_parsel p
     INNER JOIN public.tk_mahalle m ON m.tapukimlikno = p.tapumahalleref
     INNER JOIN public.tk_ilce i ON i.fid = m.ilceref
