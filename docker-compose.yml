@@ -9,5 +9,4 @@ services:
     volumes:
       - ./:/app
       - ./outputs:/app/outputs
-    command:
-      ["supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+    command: [ "supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf" ]

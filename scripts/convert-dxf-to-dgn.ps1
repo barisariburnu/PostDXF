@@ -43,24 +43,71 @@ $errorCount = 0
 foreach ($dxfFile in $dxfFiles) {
     $currentFile++
     $dxfPath = $dxfFile.FullName
+    $dxfFileName = $dxfFile.Name
+    $dgnFileName = [System.IO.Path]::ChangeExtension($dxfFileName, ".dgn")
+    $dgnPath = Join-Path $outputsFolder $dgnFileName
     
-    Write-Host "[$currentFile/$($dxfFiles.Count)] Isleniyor: $($dxfFile.Name)" -ForegroundColor Cyan
+    # Start timing
+    $startTime = Get-Date
+    
+    Write-Host "[$currentFile/$($dxfFiles.Count)] Isleniyor: $dxfFileName" -ForegroundColor Cyan
+    Write-Host "  Baslangic zamani: $($startTime.ToString('HH:mm:ss'))" -ForegroundColor Gray
+    Write-Host "  Komut: $converterExe $dxfPath" -ForegroundColor Gray
+    
+    # Delete existing DGN file if exists to ensure fresh conversion
+    if (Test-Path $dgnPath) {
+        Remove-Item $dgnPath -Force
+        Write-Host "  Eski DGN dosyasi silindi" -ForegroundColor Yellow
+    }
     
     try {
-        # Run converter.exe with the full path of the DXF file
+        # Run converter.exe directly using & operator
+        # This is exactly like: C:\CBS\PostDXF\scripts\converter.exe C:\CBS\PostDXF\outputs\FILE.dxf
         & $converterExe $dxfPath
         
-        # Check the exit code
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "  BASARILI: $($dxfFile.Name)" -ForegroundColor Green
+        Write-Host "  Converter calistirildi" -ForegroundColor Gray
+        
+        # Wait for DGN file to be created (with timeout of 1 hour)
+        $maxWaitSeconds = 3600  # 1 hour = 3600 seconds
+        $waitedSeconds = 0
+        $checkIntervalMs = 500
+        
+        Write-Host "  DGN dosyasi olusturulmasi bekleniyor..." -ForegroundColor Gray
+        
+        while (-not (Test-Path $dgnPath) -and $waitedSeconds -lt $maxWaitSeconds) {
+            Start-Sleep -Milliseconds $checkIntervalMs
+            $waitedSeconds += ($checkIntervalMs / 1000)
+        }
+        
+        # Check if DGN file was created
+        if (Test-Path $dgnPath) {
+            $endTime = Get-Date
+            $duration = $endTime - $startTime
+            $dgnSize = (Get-Item $dgnPath).Length
+            
+            Write-Host "  Bitis zamani: $($endTime.ToString('HH:mm:ss'))" -ForegroundColor Gray
+            Write-Host "  Sure: $([math]::Floor($duration.TotalMinutes)) dakika $($duration.Seconds) saniye" -ForegroundColor Gray
+            Write-Host "  BASARILI: $dgnFileName ($([math]::Round($dgnSize/1KB, 2)) KB)" -ForegroundColor Green
             $successCount++
-        } else {
-            Write-Host "  HATA: $($dxfFile.Name) - Cikis kodu: $LASTEXITCODE" -ForegroundColor Red
+        }
+        else {
+            $endTime = Get-Date
+            $duration = $endTime - $startTime
+            
+            Write-Host "  Bitis zamani: $($endTime.ToString('HH:mm:ss'))" -ForegroundColor Gray
+            Write-Host "  Sure: $([math]::Floor($duration.TotalMinutes)) dakika $($duration.Seconds) saniye" -ForegroundColor Gray
+            Write-Host "  HATA: DGN dosyasi $maxWaitSeconds saniye icinde olusturulamadi" -ForegroundColor Red
+            Write-Host "  Beklenen konum: $dgnPath" -ForegroundColor Red
+            
+            # List all files in outputs folder for debugging
+            Write-Host "  Outputs klasorundeki dosyalar:" -ForegroundColor Yellow
+            Get-ChildItem -Path $outputsFolder | ForEach-Object { Write-Host "    - $($_.Name)" -ForegroundColor Yellow }
+            
             $errorCount++
         }
     }
     catch {
-        Write-Host "  HATA: $($dxfFile.Name) - $_" -ForegroundColor Red
+        Write-Host "  HATA: $dxfFileName - $_" -ForegroundColor Red
         $errorCount++
     }
     
