@@ -111,6 +111,12 @@ foreach ($dxfFile in $dxfFiles) {
         $errorCount++
     }
     
+    # Wait 30 seconds between files (except for the last file)
+    if ($currentFile -lt $dxfFiles.Count) {
+        Write-Host "  Sonraki dosya icin 30 saniye bekleniyor..." -ForegroundColor Yellow
+        Start-Sleep -Seconds 30
+    }
+    
     Write-Host ""
 }
 
