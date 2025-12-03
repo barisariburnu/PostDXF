@@ -33,6 +33,7 @@ QUERY = """
 
 def _sanitize_filename(name: str) -> str:
     invalid = '<>:"/\\|?*'
+    name = _turkish_to_ascii(name)
     sanitized = ''.join('_' if ch in invalid else ch for ch in (name or ''))
     return sanitized.strip() or 'UNKNOWN'
 
