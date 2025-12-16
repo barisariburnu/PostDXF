@@ -8,6 +8,7 @@ $projectRoot = Split-Path -Parent $scriptDir
 # Paths
 $converterExe = Join-Path $scriptDir "converter.exe"
 $outputsFolder = Join-Path $projectRoot "outputs"
+$networkPath = "\\10.5.1.4\Murat\kadastro"
 
 # Check if converter.exe exists
 if (-Not (Test-Path $converterExe)) {
@@ -127,6 +128,35 @@ Write-Host "====================================" -ForegroundColor Cyan
 Write-Host "Toplam dosya: $($dxfFiles.Count)" -ForegroundColor White
 Write-Host "Basarili: $successCount" -ForegroundColor Green
 Write-Host "Hata: $errorCount" -ForegroundColor $(if ($errorCount -gt 0) { "Red" } else { "White" })
+
+# Copy all DGN files to network share (as a backup/alternative method)
+Write-Host ""
+Write-Host "Ag paylasimina tum DGN dosyalari kopyalaniyor..." -ForegroundColor Cyan
+
+$dgnFiles = Get-ChildItem -Path $outputsFolder -Filter "*.dgn" -File
+$copiedCount = 0
+
+foreach ($dgnFile in $dgnFiles) {
+    try {
+        Copy-Item -Path $dgnFile.FullName -Destination $networkPath -Force -ErrorAction Stop
+        Write-Host "  Kopyalandi: $($dgnFile.Name) -> $networkPath" -ForegroundColor Green
+        $copiedCount++
+    }
+    catch {
+        Write-Host "  Kopyalanamadi: $($dgnFile.Name) - $_" -ForegroundColor Red
+    }
+}
+
+Write-Host "Ag paylasimina kopyalanan dosya sayisi: $copiedCount/$($dgnFiles.Count)" -ForegroundColor $(if ($copiedCount -eq $dgnFiles.Count) { "Green" } else { "Yellow" })
+
+# List all DGN files in the outputs folder
+Write-Host ""
+Write-Host "Outputs klasorundeki DGN dosyalari:" -ForegroundColor Cyan
+$dgnFiles | ForEach-Object { 
+    $sizeKB = [math]::Round($_.Length / 1KB, 2)
+    Write-Host "  - $($_.Name) ($sizeKB KB)" -ForegroundColor White 
+}
+
 Write-Host ""
 
 # Exit with error code if any conversions failed
