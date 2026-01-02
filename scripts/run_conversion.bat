@@ -29,4 +29,4 @@ for %%F in (..\outputs\*.dxf) do (
 
 echo.
 echo ISLEMLER TAMAMLANDI.
-pause
+exit
