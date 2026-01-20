@@ -235,6 +235,9 @@ def main() -> None:
     output_dir = os.path.join(os.getcwd(), 'outputs')
     os.makedirs(output_dir, exist_ok=True)
 
+    logger.info("====================================================")
+    logger.info("   CadastralFlow — Parcel DXF Exporter (R2000)")
+    logger.info("====================================================")
     logger.info('Veritabanına bağlanılıyor...')
     conn = None
     try:

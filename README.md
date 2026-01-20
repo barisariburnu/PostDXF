@@ -1,4 +1,4 @@
-# PostDXF — Parcel DXF Exporter (R2000)
+# CadastralFlow — Parcel DXF Exporter (R2000)
 
 Minimal exporter that connects to an existing PostgreSQL database, runs one optimized query, and writes per‑district DXF files in R2000 format. Each parcel is drawn as an exterior `LWPOLYLINE` and labeled at its centroid with `"Mahalle-Parsel-Ada"`.
 
@@ -11,7 +11,7 @@ Minimal exporter that connects to an existing PostgreSQL database, runs one opti
   - `config/supervisor/supervisord.conf` — keeps cron in foreground
 - `output/` — generated DXF files (`<ILCE>.dxf`)
 - `Dockerfile` — container image for the exporter
-- `docker-compose.yml` — single service to run the exporter (`dxf`)
+- `docker-compose.yml` — single service to run the exporter (`cadastralflow`)
 - `.env` / `.env.example` — database connection configuration
 - `requirements.txt` — Python dependencies
 
@@ -37,7 +37,7 @@ Minimal exporter that connects to an existing PostgreSQL database, runs one opti
 - Docker
   - `docker-compose up --build`
   - The container runs `supervisord` which starts `cron` in foreground to keep the container alive.
-  - One‑off job run inside container: `docker-compose exec dxf bash -lc "/app/scripts/command.sh"`
+  - One‑off job run inside container: `docker-compose exec cadastralflow bash -lc "/app/scripts/command.sh"`
   - Optional: add a restart policy in `docker-compose.yml` (`restart: always`) if you want the service to auto‑start on daemon reboot.
 
 ## Cron Job
@@ -50,8 +50,8 @@ Minimal exporter that connects to an existing PostgreSQL database, runs one opti
   - Cron job output is appended to `/var/log/dxf_cron.log` inside the container.
 - Change schedule: edit `config/cron.d/dxf_export` and rebuild (`docker-compose up --build`).
 - Timezone: cron uses the container's timezone. If you need local time (not UTC), set `TZ` via environment and install `tzdata` in the image. Example compose env: `TZ=Europe/Istanbul`. Example Dockerfile addition: `apt-get update && apt-get install -y tzdata`.
-- Verify cron running: `docker-compose exec dxf bash -lc "ps aux | grep -E 'cron|supervisord'"`
-- Check latest cron output: `docker-compose exec dxf bash -lc "tail -n 200 /var/log/dxf_cron.log"`
+- Verify cron running: `docker-compose exec cadastralflow bash -lc "ps aux | grep -E 'cron|supervisord'"`
+- Check latest cron output: `docker-compose exec cadastralflow bash -lc "tail -n 200 /var/log/dxf_cron.log"`
 
 ## Outputs
 

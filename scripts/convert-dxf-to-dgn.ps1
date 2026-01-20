@@ -62,7 +62,7 @@ foreach ($dxfFile in $dxfFiles) {
     
     try {
         # Run converter.exe directly using & operator
-        # This is exactly like: C:\CBS\PostDXF\scripts\converter.exe C:\CBS\PostDXF\outputs\FILE.dxf
+        # This is exactly like: C:\CBS\CadastralFlow\scripts\converter.exe C:\CBS\CadastralFlow\outputs\FILE.dxf
         & $converterExe $dxfPath
         
         Write-Host "  Converter calistirildi" -ForegroundColor Gray

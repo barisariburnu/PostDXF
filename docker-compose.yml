@@ -1,6 +1,6 @@
 services:
-  dxf:
-    container_name: dxf
+  cadastralflow:
+    container_name: cadastralflow
     build:
       context: .
       dockerfile: Dockerfile
